@@ -1,17 +1,34 @@
+import { Platform } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
 import type { AuthSession } from './api';
 
-// In-memory for this first mobile slice; the next auth increment can replace
-// this with Expo SecureStore without changing the screen or API client.
-let session: AuthSession | null = null;
+const SESSION_KEY = 'puls.auth.session';
+let webSession: AuthSession | null = null;
 
 export async function readSession(): Promise<AuthSession | null> {
-  return session;
+  if (Platform.OS === 'web') return webSession;
+  const value = await SecureStore.getItemAsync(SESSION_KEY);
+  if (!value) return null;
+  try {
+    return JSON.parse(value) as AuthSession;
+  } catch {
+    await SecureStore.deleteItemAsync(SESSION_KEY);
+    return null;
+  }
 }
 
 export async function saveSession(nextSession: AuthSession): Promise<void> {
-  session = nextSession;
+  if (Platform.OS === 'web') {
+    webSession = nextSession;
+    return;
+  }
+  await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(nextSession));
 }
 
 export async function clearSession(): Promise<void> {
-  session = null;
+  if (Platform.OS === 'web') {
+    webSession = null;
+    return;
+  }
+  await SecureStore.deleteItemAsync(SESSION_KEY);
 }

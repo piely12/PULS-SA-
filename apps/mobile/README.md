@@ -4,16 +4,16 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
 
 ## Get started
 
-1. Install dependencies
+1. Install dependencies with pnpm
 
    ```bash
-   npm install
+   pnpm install
    ```
 
 2. Start the app
 
    ```bash
-   npx expo start
+   pnpm start
    ```
 
 ## PULS API
@@ -23,7 +23,8 @@ Copy `.env.example` to `.env.local` and set `EXPO_PUBLIC_API_URL` before startin
 Use `http://localhost:8080/api` for the web app, `http://10.0.2.2:8080/api` for the standard
 Android emulator, or the PC's LAN IP address when using Expo Go on a phone.
 
-For this first increment, the session stays in memory and is cleared when the app process restarts.
+On Android and iOS, the session is stored using Expo SecureStore. In the web preview it stays in
+memory and is cleared when the page reloads.
 
 In the output, you'll find options to open the app in a
 
@@ -39,7 +40,7 @@ You can start developing by editing the files inside the **src/app** directory. 
 When you're ready, run:
 
 ```bash
-npm run reset-project
+pnpm reset-project
 ```
 
 This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
