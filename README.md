@@ -59,4 +59,6 @@ docker compose exec db psql -U puls -d puls -v ON_ERROR_STOP=1 -f /tmp/demo_data
 Les arbitrages MLD consignés sont dans [`docs/decisions-donnees.md`](docs/decisions-donnees.md). Les références MLD5, MLD7 et MLD8 ne sont pas définies dans l'annexe du cahier des charges fournie.
 
 Le calendrier de réalisation est celui de la feuille de route PULS SA du 5 novembre 2026 au 10 janvier 2027. Le cahier des charges décrit encore une estimation initiale de 14 semaines ; son chapitre 11 doit être aligné après validation du calendrier raccourci.
+
+Les routes d’authentification, la durée des jetons et l’usage des rôles sont décrits dans [`docs/authentification.md`](docs/authentification.md).
 # PULS-SA-
