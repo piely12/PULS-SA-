@@ -16,6 +16,15 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npx expo start
    ```
 
+## PULS API
+
+The app's sign-in and registration screens use the API described in `../../docs/authentification.md`.
+Copy `.env.example` to `.env.local` and set `EXPO_PUBLIC_API_URL` before starting Expo.
+Use `http://localhost:8080/api` for the web app, `http://10.0.2.2:8080/api` for the standard
+Android emulator, or the PC's LAN IP address when using Expo Go on a phone.
+
+For this first increment, the session stays in memory and is cleared when the app process restarts.
+
 In the output, you'll find options to open the app in a
 
 - [development build](https://docs.expo.dev/develop/development-builds/introduction/)
