@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Link } from 'expo-router';
 import { API_BASE_URL, ApiError, authApi, type AuthSession, type AuthUser } from '@/lib/api';
 import { clearSession, readSession, saveSession } from '@/lib/token-store';
 
@@ -131,6 +132,12 @@ export default function HomeScreen() {
                 Retrouvez les boutiques d’Abidjan et faites-vous livrer en toute simplicité.
               </Text>
             </View>
+
+            <Link href="/catalog" asChild>
+              <Pressable style={({ pressed }) => [styles.browseButton, pressed && styles.pressed]}>
+                <Text style={styles.browseButtonText}>Découvrir les produits  ↗</Text>
+              </Pressable>
+            </Link>
 
             {user ? (
               <View style={styles.card}>
@@ -317,6 +324,8 @@ const styles = StyleSheet.create({
   headline: { color: '#f3f3ec', fontSize: 43, lineHeight: 47, fontWeight: '800', letterSpacing: -1.4 },
   headlineAccent: { color: '#a1e533' },
   intro: { color: '#a3a59c', fontSize: 15, lineHeight: 22, maxWidth: 330, marginTop: 13 },
+  browseButton: { alignSelf: 'flex-start', borderColor: '#5e743c', borderWidth: 1, borderRadius: 13, paddingHorizontal: 15, paddingVertical: 12, marginBottom: 17 },
+  browseButtonText: { color: '#c5f28a', fontSize: 13, fontWeight: '700' },
   card: { backgroundColor: '#1a1c17', borderColor: '#2e3029', borderWidth: 1, borderRadius: 24, padding: 21 },
   modeSwitch: { flexDirection: 'row', backgroundColor: '#11130f', borderRadius: 14, padding: 4, marginBottom: 22 },
   modeButton: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 11, borderRadius: 11 },

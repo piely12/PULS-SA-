@@ -20,6 +20,40 @@ export interface Registration extends Credentials {
   fullName: string;
 }
 
+export interface CatalogCategory {
+  id: string;
+  name: string;
+  slug: string;
+  parentId: string | null;
+}
+
+export interface CatalogProduct {
+  id: string;
+  name: string;
+  description: string | null;
+  basePriceXof: string;
+  priceMinXof: string;
+  priceMaxXof: string;
+  available: number;
+  image: string | null;
+  category: { id: string; name: string; slug: string };
+  shop: { id: string; name: string; slug: string };
+  brand: { id: string; name: string } | null;
+  variants?: {
+    id: string;
+    sku: string;
+    size: string;
+    color: string;
+    priceXof: string;
+    available: number;
+  }[];
+}
+
+export interface CatalogPage {
+  items: CatalogProduct[];
+  pagination: { page: number; limit: number; total: number; pages: number };
+}
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -85,4 +119,18 @@ export const authApi = {
       method: 'POST',
       body: JSON.stringify({ refreshToken }),
     }),
+};
+
+export const catalogApi = {
+  categories: () => request<CatalogCategory[]>('/catalog/categories'),
+  products: (filters: { q?: string; category?: string; page?: number } = {}) => {
+    const params = new URLSearchParams();
+    params.set('limit', '20');
+    params.set('sort', 'newest');
+    if (filters.q) params.set('q', filters.q);
+    if (filters.category) params.set('category', filters.category);
+    if (filters.page) params.set('page', String(filters.page));
+    return request<CatalogPage>(`/catalog/products?${params.toString()}`);
+  },
+  product: (id: string) => request<CatalogProduct>(`/catalog/products/${id}`),
 };

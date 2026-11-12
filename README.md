@@ -10,7 +10,7 @@ Marketplace de mode multi-boutiques avec logistique à Abidjan. Le dépôt est o
 
 ## Prérequis
 
-- Node.js 24 et npm.
+- Node.js 24 et npm (API/web), pnpm 11 (mobile).
 - Docker Desktop avec Docker Compose.
 - Expo Go ou un émulateur Android pour lancer l'application mobile.
 
@@ -38,8 +38,8 @@ npm run dev --prefix apps/web
 ```
 
 ```powershell
-npm ci --prefix apps/mobile
-npm start --prefix apps/mobile
+pnpm --dir apps/mobile install
+pnpm --dir apps/mobile start
 ```
 
 ## Base de données
@@ -61,4 +61,5 @@ Les arbitrages MLD consignés sont dans [`docs/decisions-donnees.md`](docs/decis
 Le calendrier de réalisation est celui de la feuille de route PULS SA du 5 novembre 2026 au 10 janvier 2027. Le cahier des charges décrit encore une estimation initiale de 14 semaines ; son chapitre 11 doit être aligné après validation du calendrier raccourci.
 
 Les routes d’authentification, la durée des jetons et l’usage des rôles sont décrits dans [`docs/authentification.md`](docs/authentification.md).
+Les routes publiques du catalogue sont décrites dans [`docs/catalogue.md`](docs/catalogue.md).
 # PULS-SA-
