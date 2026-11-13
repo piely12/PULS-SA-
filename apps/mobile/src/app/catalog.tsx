@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   Modal,
   Pressable,
   ScrollView,
@@ -12,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import {
+  API_BASE_URL,
   catalogApi,
   type CatalogCategory,
   type CatalogProduct,
@@ -213,7 +215,11 @@ function ProductCard(props: { product: CatalogProduct; onPress: () => void }) {
   return (
     <Pressable accessibilityRole="button" onPress={props.onPress} style={({ pressed }) => [styles.productCard, pressed && styles.cardPressed]}>
       <View style={styles.productArt}>
-        <Text style={styles.productInitial}>{product.name.trim().charAt(0).toUpperCase()}</Text>
+        {product.image ? (
+          <Image source={{ uri: `${API_BASE_URL}/media/${product.image}` }} style={styles.productImage} />
+        ) : (
+          <Text style={styles.productInitial}>{product.name.trim().charAt(0).toUpperCase()}</Text>
+        )}
         <Text style={styles.artLabel}>{product.category.name.toUpperCase()}</Text>
       </View>
       <View style={styles.productInfo}>
@@ -262,6 +268,7 @@ const styles = StyleSheet.create({
   cardPressed: { opacity: 0.82 },
   productArt: { height: 142, backgroundColor: '#25291f', alignItems: 'center', justifyContent: 'center', position: 'relative' },
   productInitial: { color: '#697b4f', fontSize: 70, fontWeight: '900' },
+  productImage: { width: '100%', height: '100%', resizeMode: 'cover' },
   artLabel: { color: '#a9c87c', position: 'absolute', bottom: 12, left: 12, fontSize: 8, letterSpacing: 1.2, fontWeight: '800' },
   productInfo: { paddingHorizontal: 13, paddingVertical: 13 },
   shopName: { color: '#999b92', fontSize: 10, marginBottom: 5 },

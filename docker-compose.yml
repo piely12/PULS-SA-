@@ -25,6 +25,7 @@ services:
       redis: { condition: service_healthy }
     volumes:
       - ./apps/api/src:/app/src
+      - ./uploads:/app/uploads
   nginx:
     image: nginx:1.27-alpine
     depends_on: [api]

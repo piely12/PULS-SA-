@@ -5,3 +5,4 @@ dist/
 .expo/
 .DS_Store
 pgdata/
+uploads/
