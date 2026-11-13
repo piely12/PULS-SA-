@@ -14,10 +14,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import {
   API_BASE_URL,
+  ApiError,
+  cartApi,
   catalogApi,
   type CatalogCategory,
   type CatalogProduct,
 } from '@/lib/api';
+import { readSession } from '@/lib/token-store';
 
 const accent = '#a1e533';
 
@@ -34,6 +37,9 @@ export default function CatalogScreen() {
   const [selected, setSelected] = useState<CatalogProduct | null>(null);
   const [detail, setDetail] = useState<CatalogProduct | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [selectedVariant, setSelectedVariant] = useState('');
+  const [addingToCart, setAddingToCart] = useState(false);
+  const [cartMessage, setCartMessage] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -94,12 +100,41 @@ export default function CatalogScreen() {
     setSelected(null);
     setDetail(null);
     setDetailLoading(false);
+    setSelectedVariant('');
+    setCartMessage('');
   }
 
   function openDetail(product: CatalogProduct) {
     setDetail(null);
     setDetailLoading(true);
     setSelected(product);
+    setSelectedVariant('');
+    setCartMessage('');
+  }
+
+  async function addToCart() {
+    if (!detail || !selectedVariant) return;
+    setAddingToCart(true);
+    setCartMessage('');
+    try {
+      const session = await readSession();
+      if (!session) {
+        closeDetail();
+        router.push('/');
+        return;
+      }
+      await cartApi.add(session.accessToken, selectedVariant);
+      setCartMessage('Article ajouté au panier.');
+    } catch (cause) {
+      if (cause instanceof ApiError && cause.status === 401) {
+        closeDetail();
+        router.push('/');
+      } else {
+        setCartMessage(cause instanceof Error ? cause.message : 'Ajout au panier impossible.');
+      }
+    } finally {
+      setAddingToCart(false);
+    }
   }
 
   return (
@@ -111,6 +146,7 @@ export default function CatalogScreen() {
           </Pressable>
           <View style={styles.brandMark}><Text style={styles.brandMarkText}>P</Text></View>
           <Text style={styles.brand}>PULS</Text>
+          <Pressable onPress={() => router.push('/cart')} style={styles.cartLink}><Text style={styles.cartLinkText}>PANIER</Text></Pressable>
           <Text style={styles.city}>ABIDJAN</Text>
         </View>
 
@@ -186,11 +222,15 @@ export default function CatalogScreen() {
                   <>
                     <Text style={styles.variantHeading}>Tailles et couleurs</Text>
                     {detail.variants.map((variant) => (
-                      <View key={variant.id} style={styles.variantRow}>
+                      <Pressable key={variant.id} disabled={variant.available < 1} onPress={() => setSelectedVariant(variant.id)} style={[styles.variantRow, selectedVariant === variant.id && styles.variantSelected, variant.available < 1 && styles.variantDisabled]}>
                         <Text style={styles.variantName}>{[variant.size, variant.color].filter(Boolean).join(' · ') || 'Standard'}</Text>
                         <Text style={styles.variantPrice}>{formatXof(variant.priceXof)} · {variant.available} dispo.</Text>
-                      </View>
+                      </Pressable>
                     ))}
+                    {cartMessage ? <Text accessibilityLiveRegion="polite" style={styles.cartMessage}>{cartMessage}</Text> : null}
+                    <Pressable accessibilityRole="button" disabled={!selectedVariant || addingToCart} onPress={() => void addToCart()} style={[styles.addToCart, (!selectedVariant || addingToCart) && styles.addToCartDisabled]}>
+                      <Text style={styles.addToCartText}>{addingToCart ? 'Ajout…' : 'Ajouter au panier'}</Text>
+                    </Pressable>
                   </>
                 )}
               </ScrollView>
@@ -296,6 +336,14 @@ const styles = StyleSheet.create({
   description: { color: '#c1c2ba', fontSize: 14, lineHeight: 21, marginTop: 18 },
   variantHeading: { color: '#f3f3ec', fontSize: 14, fontWeight: '700', marginTop: 22, marginBottom: 5 },
   variantRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#34362f', gap: 12 },
+  variantSelected: { backgroundColor: '#292c22', borderRadius: 9, paddingHorizontal: 9, borderBottomColor: accent },
+  variantDisabled: { opacity: 0.45 },
+  cartMessage: { color: '#c5f28a', fontSize: 12, marginTop: 13 },
+  addToCart: { alignItems: 'center', justifyContent: 'center', minHeight: 48, backgroundColor: accent, borderRadius: 12, marginTop: 15 },
+  addToCartDisabled: { opacity: 0.45 },
+  addToCartText: { color: '#11130f', fontSize: 13, fontWeight: '800' },
+  cartLink: { marginLeft: 'auto', paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10, backgroundColor: '#24271f' },
+  cartLinkText: { color: accent, fontSize: 9, fontWeight: '800', letterSpacing: 1 },
   variantName: { color: '#f3f3ec', fontSize: 13, fontWeight: '600', flex: 1 },
   variantPrice: { color: '#a3a59c', fontSize: 11, textAlign: 'right' },
 });

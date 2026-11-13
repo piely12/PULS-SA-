@@ -54,6 +54,31 @@ export interface CatalogPage {
   pagination: { page: number; limit: number; total: number; pages: number };
 }
 
+export interface CartItem {
+  id: string;
+  variantId: string;
+  productId: string;
+  name: string;
+  description: string | null;
+  shop: { id: string; name: string };
+  category: string;
+  size: string;
+  color: string;
+  sku: string;
+  unitPriceXof: string;
+  lineTotalXof: string;
+  quantity: number;
+  available: number;
+  image: string | null;
+  canBuy: boolean;
+}
+
+export interface CartSnapshot {
+  items: CartItem[];
+  subtotalXof: string;
+  hasUnavailableItems: boolean;
+}
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -133,4 +158,24 @@ export const catalogApi = {
     return request<CatalogPage>(`/catalog/products?${params.toString()}`);
   },
   product: (id: string) => request<CatalogProduct>(`/catalog/products/${id}`),
+};
+
+export const cartApi = {
+  get: (accessToken: string) => request<CartSnapshot>('/cart', {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  }),
+  add: (accessToken: string, variantId: string, quantity = 1) =>
+    request<{ id: string; variantId: string; quantity: number; available: number }>('/cart/items', {
+      method: 'POST', headers: { Authorization: `Bearer ${accessToken}` },
+      body: JSON.stringify({ variantId, quantity }),
+    }),
+  update: (accessToken: string, itemId: string, quantity: number) =>
+    request<{ id: string; variantId: string; quantity: number; available: number }>(`/cart/items/${itemId}`, {
+      method: 'PATCH', headers: { Authorization: `Bearer ${accessToken}` },
+      body: JSON.stringify({ quantity }),
+    }),
+  remove: (accessToken: string, itemId: string) =>
+    request<{ success: true }>(`/cart/items/${itemId}`, {
+      method: 'DELETE', headers: { Authorization: `Bearer ${accessToken}` },
+    }),
 };
