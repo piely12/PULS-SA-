@@ -79,6 +79,35 @@ export interface CartSnapshot {
   hasUnavailableItems: boolean;
 }
 
+export interface DeliveryZone {
+  id: string;
+  name: string;
+}
+
+export interface DeliveryAddress {
+  id: string;
+  zoneId: string;
+  zoneName: string;
+  recipientName: string;
+  recipientPhone: string;
+  commune: string;
+  neighborhood: string | null;
+  landmark: string | null;
+  isDefault: boolean;
+}
+
+export interface DeliveryQuote {
+  addressId: string;
+  deliveryZone: string;
+  itemCount: number;
+  weightG: number;
+  subtotalXof: string;
+  deliveryFeeXof: string;
+  totalXof: string;
+  freeDelivery: boolean;
+  isEstimate: boolean;
+}
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -178,4 +207,24 @@ export const cartApi = {
     request<{ success: true }>(`/cart/items/${itemId}`, {
       method: 'DELETE', headers: { Authorization: `Bearer ${accessToken}` },
     }),
+};
+
+export const checkoutApi = {
+  zones: (accessToken: string) => request<DeliveryZone[]>('/checkout/zones', {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  }),
+  addresses: (accessToken: string) => request<DeliveryAddress[]>('/checkout/addresses', {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  }),
+  createAddress: (accessToken: string, input: Omit<DeliveryAddress, 'id' | 'zoneName'>) =>
+    request<DeliveryAddress>('/checkout/addresses', {
+      method: 'POST', headers: { Authorization: `Bearer ${accessToken}` },
+      body: JSON.stringify(input),
+    }),
+  quote: (accessToken: string, addressId: string) => {
+    const params = new URLSearchParams({ addressId });
+    return request<DeliveryQuote>(`/checkout/quote?${params.toString()}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  },
 };

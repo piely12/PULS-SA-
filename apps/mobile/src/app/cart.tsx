@@ -138,8 +138,8 @@ export default function CartScreen() {
               <View style={styles.summaryRow}><Text style={styles.summaryLabel}>Livraison</Text><Text style={styles.summaryHint}>Calculée à l’étape suivante</Text></View>
               <View style={styles.divider} />
               <View style={styles.summaryRow}><Text style={styles.totalLabel}>Total provisoire</Text><Text style={styles.totalValue}>{formatXof(cart.subtotalXof)}</Text></View>
-              <Pressable accessibilityRole="button" disabled style={styles.checkoutButton}><Text style={styles.checkoutText}>Continuer vers le paiement</Text></Pressable>
-              <Text style={styles.checkoutHint}>Le choix de l’adresse et le paiement sont la prochaine étape du projet.</Text>
+              <Pressable accessibilityRole="button" disabled={cart.hasUnavailableItems} onPress={() => router.push('/checkout')} style={[styles.checkoutButton, cart.hasUnavailableItems && styles.checkoutDisabled]}><Text style={styles.checkoutText}>Choisir l’adresse de livraison</Text></Pressable>
+              <Text style={styles.checkoutHint}>Les frais de livraison seront calculés selon votre zone.</Text>
             </View>
           </>
         )}
@@ -202,6 +202,7 @@ const styles = StyleSheet.create({
   totalLabel: { color: '#f2f3eb', fontSize: 13, fontWeight: '800' },
   totalValue: { color: accent, fontSize: 15, fontWeight: '900' },
   checkoutButton: { minHeight: 49, alignItems: 'center', justifyContent: 'center', backgroundColor: '#34372e', borderRadius: 12, marginTop: 15, opacity: 0.8 },
+  checkoutDisabled: { opacity: 0.45 },
   checkoutText: { color: '#9a9d91', fontSize: 12, fontWeight: '800' },
   checkoutHint: { color: '#74776d', fontSize: 9, textAlign: 'center', marginTop: 9 },
   footer: { color: '#55574f', textAlign: 'center', letterSpacing: 1.2, fontSize: 9, fontWeight: '700', marginTop: 28 },
