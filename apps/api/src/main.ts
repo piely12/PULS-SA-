@@ -10,9 +10,15 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const uploadRoot = join(process.cwd(), 'uploads');
   await mkdir(join(uploadRoot, 'products'), { recursive: true });
-  const webOrigins = process.env.WEB_ORIGINS?.split(',').map((origin) => origin.trim()).filter(Boolean)
-    ?? ['http://localhost:5173'];
-  app.enableCors({ origin: webOrigins });
+  const webOrigins = new Set(process.env.WEB_ORIGINS?.split(',').map((origin) => origin.trim()).filter(Boolean)
+    ?? ['http://localhost:5173']);
+  const isLocalDevOrigin = (origin: string) => process.env.NODE_ENV !== 'production'
+    && /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i.test(origin);
+  app.enableCors({
+    origin: (origin, callback) => {
+      callback(null, !origin || webOrigins.has(origin) || isLocalDevOrigin(origin));
+    },
+  });
   app.use('/media', express.static(uploadRoot, { immutable: true, maxAge: '7d', dotfiles: 'deny' }));
   app.useGlobalPipes(
     new ValidationPipe({
