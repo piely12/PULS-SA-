@@ -12,6 +12,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { pulsDesign } from '@/constants/puls-design';
+import { ClientTabBar } from '@/components/client-tab-bar';
 import {
   API_BASE_URL,
   ApiError,
@@ -21,8 +23,9 @@ import {
   type CatalogProduct,
 } from '@/lib/api';
 import { readSession } from '@/lib/token-store';
+import { readFavoriteIds, saveFavoriteIds } from '@/lib/favorites-store';
 
-const accent = '#a1e533';
+const accent = pulsDesign.accent;
 
 export default function CatalogScreen() {
   const [categories, setCategories] = useState<CatalogCategory[]>([]);
@@ -40,6 +43,9 @@ export default function CatalogScreen() {
   const [selectedVariant, setSelectedVariant] = useState('');
   const [addingToCart, setAddingToCart] = useState(false);
   const [cartMessage, setCartMessage] = useState('');
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+
+  useEffect(() => { void readFavoriteIds().then(setFavoriteIds); }, []);
 
   useEffect(() => {
     let active = true;
@@ -112,6 +118,14 @@ export default function CatalogScreen() {
     setCartMessage('');
   }
 
+  async function toggleFavorite(productId: string) {
+    const next = favoriteIds.includes(productId)
+      ? favoriteIds.filter((id) => id !== productId)
+      : [...favoriteIds, productId];
+    setFavoriteIds(next);
+    await saveFavoriteIds(next);
+  }
+
   async function addToCart() {
     if (!detail || !selectedVariant) return;
     setAddingToCart(true);
@@ -144,14 +158,13 @@ export default function CatalogScreen() {
           <Pressable accessibilityRole="button" accessibilityLabel="Retour" onPress={() => router.back()} style={styles.back}>
             <Text style={styles.backText}>‹</Text>
           </Pressable>
-          <View style={styles.brandMark}><Text style={styles.brandMarkText}>P</Text></View>
-          <Text style={styles.brand}>PULS</Text>
+          <Image accessibilityLabel="PULS SA" source={require('../../assets/images/puls-sa-logo.png')} style={styles.brandLogo} />
           <Pressable onPress={() => router.push('/cart')} style={styles.cartLink}><Text style={styles.cartLinkText}>PANIER</Text></Pressable>
           <Text style={styles.city}>ABIDJAN</Text>
         </View>
 
         <Text style={styles.eyebrow}>LE STYLE ABIDJANAIS</Text>
-        <Text style={styles.title}>Le catalogue</Text>
+        <Text style={styles.title}>Explorer</Text>
         <Text style={styles.subtitle}>Les pièces des boutiques de votre ville.</Text>
 
         <TextInput
@@ -159,7 +172,7 @@ export default function CatalogScreen() {
           autoCapitalize="none"
           onChangeText={(value) => { setQuery(value); setPage(1); }}
           placeholder="Robe, sneakers, accessoires…"
-          placeholderTextColor="#74756e"
+          placeholderTextColor="#6B6B7B"
           returnKeyType="search"
           style={styles.search}
           value={query}
@@ -192,13 +205,13 @@ export default function CatalogScreen() {
           </View>
         ) : (
           <View style={styles.grid}>
-            {products.map((product) => <ProductCard key={product.id} product={product} onPress={() => openDetail(product)} />)}
+            {products.map((product) => <ProductCard key={product.id} product={product} onPress={() => openDetail(product)} isFavorite={favoriteIds.includes(product.id)} onToggleFavorite={() => void toggleFavorite(product.id)} />)}
           </View>
         )}
 
         {!loading && !error && page < pages && (
           <Pressable disabled={moreLoading} onPress={() => setPage((value) => value + 1)} style={styles.more}>
-            {moreLoading ? <ActivityIndicator color="#11130f" /> : <Text style={styles.moreText}>Voir plus</Text>}
+            {moreLoading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.moreText}>Voir plus</Text>}
           </Pressable>
         )}
         <Text style={styles.footer}>PULS · LA MODE, TOUT PRÈS DE VOUS</Text>
@@ -238,6 +251,7 @@ export default function CatalogScreen() {
           </View>
         </View>
       </Modal>
+      <ClientTabBar active="explore" />
     </SafeAreaView>
   );
 }
@@ -250,25 +264,30 @@ function CategoryChip(props: { active: boolean; label: string; onPress: () => vo
   );
 }
 
-function ProductCard(props: { product: CatalogProduct; onPress: () => void }) {
+function ProductCard(props: { product: CatalogProduct; onPress: () => void; isFavorite: boolean; onToggleFavorite: () => void }) {
   const { product } = props;
   return (
-    <Pressable accessibilityRole="button" onPress={props.onPress} style={({ pressed }) => [styles.productCard, pressed && styles.cardPressed]}>
-      <View style={styles.productArt}>
-        {product.image ? (
-          <Image source={{ uri: `${API_BASE_URL}/media/${product.image}` }} style={styles.productImage} />
-        ) : (
-          <Text style={styles.productInitial}>{product.name.trim().charAt(0).toUpperCase()}</Text>
-        )}
-        <Text style={styles.artLabel}>{product.category.name.toUpperCase()}</Text>
-      </View>
-      <View style={styles.productInfo}>
-        <Text numberOfLines={1} style={styles.shopName}>{product.shop.name}</Text>
-        <Text numberOfLines={2} style={styles.productName}>{product.name}</Text>
-        <Text style={styles.productPrice}>{priceRange(product)}</Text>
-        <Text style={styles.productStock}>{product.available > 0 ? 'DISPONIBLE' : 'ÉPUISÉ'}</Text>
-      </View>
-    </Pressable>
+    <View style={styles.productCard}>
+      <Pressable accessibilityRole="button" onPress={props.onPress} style={({ pressed }) => [styles.cardBody, pressed && styles.cardPressed]}>
+        <View style={styles.productArt}>
+          {product.image ? (
+            <Image source={{ uri: `${API_BASE_URL}/media/${product.image}` }} style={styles.productImage} />
+          ) : (
+            <Text style={styles.productInitial}>{product.name.trim().charAt(0).toUpperCase()}</Text>
+          )}
+          <Text style={styles.artLabel}>{product.category.name.toUpperCase()}</Text>
+        </View>
+        <View style={styles.productInfo}>
+          <Text numberOfLines={1} style={styles.shopName}>{product.shop.name}</Text>
+          <Text numberOfLines={2} style={styles.productName}>{product.name}</Text>
+          <Text style={styles.productPrice}>{priceRange(product)}</Text>
+          <Text style={styles.productStock}>{product.available > 0 ? 'DISPONIBLE' : 'ÉPUISÉ'}</Text>
+        </View>
+      </Pressable>
+      <Pressable accessibilityRole="button" accessibilityLabel={props.isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'} onPress={props.onToggleFavorite} style={styles.favoriteButton}>
+        <Text style={[styles.favoriteIcon, props.isFavorite && styles.favoriteIconActive]}>{props.isFavorite ? '♥' : '♡'}</Text>
+      </Pressable>
+    </View>
   );
 }
 
@@ -282,68 +301,72 @@ function priceRange(product: CatalogProduct) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#11130f' },
-  content: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 38, maxWidth: 900, width: '100%', alignSelf: 'center' },
-  topline: { flexDirection: 'row', alignItems: 'center', gap: 9, marginBottom: 34 },
-  back: { width: 35, height: 35, borderRadius: 12, backgroundColor: '#1a1c17', alignItems: 'center', justifyContent: 'center', marginRight: 2 },
-  backText: { color: '#f3f3ec', fontSize: 28, lineHeight: 31 },
-  brandMark: { width: 32, height: 32, borderRadius: 11, backgroundColor: accent, alignItems: 'center', justifyContent: 'center' },
-  brandMarkText: { color: '#11130f', fontSize: 21, fontWeight: '900' },
-  brand: { color: '#f3f3ec', fontWeight: '900', letterSpacing: 3, fontSize: 15 },
-  city: { color: '#a3a59c', marginLeft: 'auto', fontSize: 10, letterSpacing: 1.5, fontWeight: '700' },
+  safe: { flex: 1, backgroundColor: pulsDesign.background },
+  content: { paddingHorizontal: 24, paddingTop: 12, paddingBottom: 112, maxWidth: 430, width: '100%', alignSelf: 'center' },
+  topline: { flexDirection: 'row', alignItems: 'center', gap: 9, marginBottom: 22 },
+  back: { width: 44, height: 44, borderRadius: 22, backgroundColor: pulsDesign.surface, borderWidth: 1, borderColor: pulsDesign.border, alignItems: 'center', justifyContent: 'center', marginRight: 2 },
+  backText: { color: '#16161D', fontSize: 28, lineHeight: 31 },
+  brandLogo: { width: 66, height: 44, resizeMode: 'contain' },
+  brandMarkText: { color: '#FFFFFF', fontSize: 21, fontWeight: '900' },
+  brand: { color: '#16161D', fontWeight: '900', letterSpacing: 3, fontSize: 15 },
+  city: { color: '#6B6B7B', marginLeft: 'auto', fontSize: 10, letterSpacing: 1.5, fontWeight: '700' },
   eyebrow: { color: accent, fontSize: 10, fontWeight: '800', letterSpacing: 2.1, marginBottom: 9 },
-  title: { color: '#f3f3ec', fontSize: 38, fontWeight: '800', letterSpacing: -1 },
-  subtitle: { color: '#a3a59c', fontSize: 14, marginTop: 8, marginBottom: 22 },
-  search: { color: '#f3f3ec', height: 50, borderWidth: 1, borderColor: '#34362f', borderRadius: 14, backgroundColor: '#1a1c17', paddingHorizontal: 15, fontSize: 14 },
+  title: { color: '#16161D', fontSize: 26, fontWeight: '800', letterSpacing: -0.3 },
+  subtitle: { color: '#6B6B7B', fontSize: 14, marginTop: 8, marginBottom: 22 },
+  search: { color: '#16161D', height: 50, borderWidth: 1, borderColor: '#E3E3E8', borderRadius: 14, backgroundColor: '#FFFFFF', paddingHorizontal: 15, fontSize: 14 },
   chips: { gap: 8, paddingVertical: 17 },
-  chip: { borderWidth: 1, borderColor: '#34362f', borderRadius: 22, paddingHorizontal: 14, paddingVertical: 9 },
+  chip: { borderWidth: 1, borderColor: '#E3E3E8', borderRadius: 22, paddingHorizontal: 14, paddingVertical: 9 },
   chipActive: { backgroundColor: accent, borderColor: accent },
-  chipText: { color: '#b7b9b0', fontSize: 12, fontWeight: '600' },
-  chipTextActive: { color: '#11130f', fontWeight: '800' },
+  chipText: { color: '#6B6B7B', fontSize: 12, fontWeight: '600' },
+  chipTextActive: { color: '#FFFFFF', fontWeight: '800' },
   sectionHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
-  sectionTitle: { color: '#f3f3ec', fontSize: 17, fontWeight: '700' },
-  sectionMeta: { color: '#74766d', fontSize: 9, letterSpacing: 1.2, fontWeight: '800' },
+  sectionTitle: { color: '#16161D', fontSize: 17, fontWeight: '700' },
+  sectionMeta: { color: '#6B6B7B', fontSize: 9, letterSpacing: 1.2, fontWeight: '800' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  productCard: { width: '48%', flexGrow: 1, flexBasis: 155, overflow: 'hidden', backgroundColor: '#1a1c17', borderColor: '#2e3029', borderWidth: 1, borderRadius: 18, marginBottom: 2 },
+  productCard: { width: '48%', flexGrow: 1, flexBasis: 155, overflow: 'hidden', backgroundColor: '#FFFFFF', borderColor: '#E3E3E8', borderWidth: 1, borderRadius: 22, marginBottom: 2, position: 'relative' },
+  cardBody: { flex: 1 },
+  favoriteButton: { position: 'absolute', right: 10, top: 10, width: 38, height: 38, borderRadius: 19, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#E3E3E8' },
+  favoriteIcon: { color: '#6B6B7B', fontSize: 21, lineHeight: 25 },
+  favoriteIconActive: { color: accent },
   cardPressed: { opacity: 0.82 },
-  productArt: { height: 142, backgroundColor: '#25291f', alignItems: 'center', justifyContent: 'center', position: 'relative' },
-  productInitial: { color: '#697b4f', fontSize: 70, fontWeight: '900' },
+  productArt: { height: 142, backgroundColor: '#E7E7EC', alignItems: 'center', justifyContent: 'center', position: 'relative' },
+  productInitial: { color: accent, fontSize: 70, fontWeight: '900' },
   productImage: { width: '100%', height: '100%', resizeMode: 'cover' },
-  artLabel: { color: '#a9c87c', position: 'absolute', bottom: 12, left: 12, fontSize: 8, letterSpacing: 1.2, fontWeight: '800' },
+  artLabel: { color: '#FFFFFF', position: 'absolute', bottom: 12, left: 12, fontSize: 8, letterSpacing: 1.2, fontWeight: '800' },
   productInfo: { paddingHorizontal: 13, paddingVertical: 13 },
-  shopName: { color: '#999b92', fontSize: 10, marginBottom: 5 },
-  productName: { color: '#f2f3eb', fontSize: 13, lineHeight: 18, fontWeight: '700', minHeight: 36 },
+  shopName: { color: '#6B6B7B', fontSize: 10, marginBottom: 5 },
+  productName: { color: '#16161D', fontSize: 13, lineHeight: 18, fontWeight: '700', minHeight: 36 },
   productPrice: { color: accent, fontSize: 13, fontWeight: '800', marginTop: 9 },
-  productStock: { color: '#76786f', fontSize: 8, letterSpacing: 1.1, fontWeight: '800', marginTop: 7 },
-  state: { minHeight: 210, alignItems: 'center', justifyContent: 'center', padding: 24, borderRadius: 18, backgroundColor: '#1a1c17' },
-  stateTitle: { color: '#f3f3ec', fontSize: 17, fontWeight: '700', textAlign: 'center' },
-  stateCopy: { color: '#a3a59c', fontSize: 13, lineHeight: 20, textAlign: 'center', marginTop: 7 },
-  retry: { backgroundColor: accent, borderRadius: 12, paddingHorizontal: 17, paddingVertical: 11, marginTop: 15 },
-  retryText: { color: '#11130f', fontWeight: '800', fontSize: 12 },
-  more: { minHeight: 48, alignItems: 'center', justifyContent: 'center', backgroundColor: accent, borderRadius: 13, marginTop: 18 },
-  moreText: { color: '#11130f', fontSize: 13, fontWeight: '800' },
-  footer: { color: '#55574f', textAlign: 'center', letterSpacing: 1.2, fontSize: 9, fontWeight: '700', marginTop: 30 },
+  productStock: { color: '#6B6B7B', fontSize: 8, letterSpacing: 1.1, fontWeight: '800', marginTop: 7 },
+  state: { minHeight: 210, alignItems: 'center', justifyContent: 'center', padding: 24, borderRadius: 18, backgroundColor: '#FFFFFF' },
+  stateTitle: { color: '#16161D', fontSize: 17, fontWeight: '700', textAlign: 'center' },
+  stateCopy: { color: '#6B6B7B', fontSize: 13, lineHeight: 20, textAlign: 'center', marginTop: 7 },
+  retry: { backgroundColor: accent, borderRadius: 28, paddingHorizontal: 17, paddingVertical: 13, marginTop: 15 },
+  retryText: { color: '#FFFFFF', fontWeight: '800', fontSize: 12 },
+  more: { minHeight: 52, alignItems: 'center', justifyContent: 'center', backgroundColor: accent, borderRadius: 28, marginTop: 18 },
+  moreText: { color: '#FFFFFF', fontSize: 13, fontWeight: '800' },
+  footer: { color: '#6B6B7B', textAlign: 'center', letterSpacing: 1.2, fontSize: 9, fontWeight: '700', marginTop: 30 },
   modalBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: '#0009' },
-  modalCard: { maxHeight: '82%', minHeight: '42%', backgroundColor: '#1a1c17', borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingHorizontal: 22, paddingTop: 13, paddingBottom: 28 },
-  modalHandle: { alignSelf: 'center', width: 38, height: 4, borderRadius: 4, backgroundColor: '#52544c', marginBottom: 16 },
-  close: { position: 'absolute', zIndex: 1, right: 18, top: 14, width: 34, height: 34, borderRadius: 17, backgroundColor: '#292c25', alignItems: 'center', justifyContent: 'center' },
-  closeText: { color: '#f3f3ec', fontSize: 24, lineHeight: 27 },
+  modalCard: { maxHeight: '82%', minHeight: '42%', backgroundColor: '#FFFFFF', borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingHorizontal: 22, paddingTop: 13, paddingBottom: 28 },
+  modalHandle: { alignSelf: 'center', width: 38, height: 4, borderRadius: 4, backgroundColor: '#E3E3E8', marginBottom: 16 },
+  close: { position: 'absolute', zIndex: 1, right: 18, top: 14, width: 44, height: 44, borderRadius: 22, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E3E3E8', alignItems: 'center', justifyContent: 'center' },
+  closeText: { color: '#16161D', fontSize: 24, lineHeight: 27 },
   modalLoading: { marginTop: 70 },
   modalCategory: { color: accent, fontSize: 10, letterSpacing: 1.2, fontWeight: '800', marginTop: 8, marginBottom: 12 },
-  modalTitle: { color: '#f3f3ec', fontSize: 25, lineHeight: 31, fontWeight: '800', paddingRight: 35 },
+  modalTitle: { color: '#16161D', fontSize: 25, lineHeight: 31, fontWeight: '800', paddingRight: 35 },
   modalPrice: { color: accent, fontSize: 19, fontWeight: '800', marginTop: 13 },
   modalStock: { color: '#aaa', fontSize: 12, marginTop: 5 },
-  description: { color: '#c1c2ba', fontSize: 14, lineHeight: 21, marginTop: 18 },
-  variantHeading: { color: '#f3f3ec', fontSize: 14, fontWeight: '700', marginTop: 22, marginBottom: 5 },
-  variantRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#34362f', gap: 12 },
-  variantSelected: { backgroundColor: '#292c22', borderRadius: 9, paddingHorizontal: 9, borderBottomColor: accent },
+  description: { color: '#6B6B7B', fontSize: 14, lineHeight: 21, marginTop: 18 },
+  variantHeading: { color: '#16161D', fontSize: 14, fontWeight: '700', marginTop: 22, marginBottom: 5 },
+  variantRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#E3E3E8', gap: 12 },
+  variantSelected: { backgroundColor: '#E7E7EC', borderRadius: 9, paddingHorizontal: 9, borderBottomColor: accent },
   variantDisabled: { opacity: 0.45 },
-  cartMessage: { color: '#c5f28a', fontSize: 12, marginTop: 13 },
+  cartMessage: { color: '#D63B12', fontSize: 12, marginTop: 13 },
   addToCart: { alignItems: 'center', justifyContent: 'center', minHeight: 48, backgroundColor: accent, borderRadius: 12, marginTop: 15 },
   addToCartDisabled: { opacity: 0.45 },
-  addToCartText: { color: '#11130f', fontSize: 13, fontWeight: '800' },
-  cartLink: { marginLeft: 'auto', paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10, backgroundColor: '#24271f' },
+  addToCartText: { color: '#FFFFFF', fontSize: 13, fontWeight: '800' },
+  cartLink: { marginLeft: 'auto', paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10, backgroundColor: '#E7E7EC' },
   cartLinkText: { color: accent, fontSize: 9, fontWeight: '800', letterSpacing: 1 },
-  variantName: { color: '#f3f3ec', fontSize: 13, fontWeight: '600', flex: 1 },
-  variantPrice: { color: '#a3a59c', fontSize: 11, textAlign: 'right' },
+  variantName: { color: '#16161D', fontSize: 13, fontWeight: '600', flex: 1 },
+  variantPrice: { color: '#6B6B7B', fontSize: 11, textAlign: 'right' },
 });

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -12,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link } from 'expo-router';
+import { pulsDesign } from '@/constants/puls-design';
 import { API_BASE_URL, ApiError, authApi, type AuthSession, type AuthUser } from '@/lib/api';
 import { clearSession, readSession, saveSession } from '@/lib/token-store';
 
@@ -100,7 +102,7 @@ export default function HomeScreen() {
   if (busy) {
     return (
       <SafeAreaView style={styles.loading}>
-        <ActivityIndicator color="#a1e533" size="large" />
+        <ActivityIndicator color="#D63B12" size="large" />
       </SafeAreaView>
     );
   }
@@ -113,10 +115,7 @@ export default function HomeScreen() {
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <View style={styles.content}>
             <View style={styles.topline}>
-              <View style={styles.brandMark}>
-                <Text style={styles.brandMarkText}>P</Text>
-              </View>
-              <Text style={styles.brand}>PULS</Text>
+              <Image accessibilityLabel="PULS SA" source={require('../../assets/images/puls-sa-logo.png')} style={styles.brandLogo} />
               <View style={styles.cityPill}>
                 <Text style={styles.cityText}>ABIDJAN</Text>
               </View>
@@ -125,8 +124,8 @@ export default function HomeScreen() {
             <View style={styles.hero}>
               <Text style={styles.eyebrow}>LA MODE, TOUT PRÈS DE VOUS</Text>
               <Text style={styles.headline}>
-                Votre style.{ '\n' }
-                <Text style={styles.headlineAccent}>Votre ville.</Text>
+                La mode d’Abidjan,{ '\n' }
+                <Text style={styles.headlineAccent}>livrée chez vous.</Text>
               </Text>
               <Text style={styles.intro}>
                 Retrouvez les boutiques d’Abidjan et faites-vous livrer en toute simplicité.
@@ -171,7 +170,7 @@ export default function HomeScreen() {
                 </View>
 
                 <Text style={styles.cardTitle}>
-                  {mode === 'login' ? 'Ravi de vous revoir' : 'Rejoignez PULS'}
+                  {mode === 'login' ? 'Bon retour parmi nous' : 'Créer un compte'}
                 </Text>
                 <Text style={styles.cardCopy}>
                   {mode === 'login'
@@ -218,7 +217,7 @@ export default function HomeScreen() {
                   onPress={submit}
                   style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}>
                   {submitting ? (
-                    <ActivityIndicator color="#11130c" />
+                    <ActivityIndicator color="#FFFFFF" />
                   ) : (
                     <Text style={styles.primaryButtonText}>
                       {mode === 'login' ? 'Me connecter' : 'Créer mon compte'}
@@ -264,7 +263,7 @@ function Field(props: {
         keyboardType={props.keyboardType ?? 'default'}
         onChangeText={props.onChangeText}
         placeholder={props.placeholder}
-        placeholderTextColor="#74756e"
+        placeholderTextColor="#6B6B7B"
         secureTextEntry={props.secureTextEntry}
         style={styles.input}
         value={props.value}
@@ -309,48 +308,46 @@ function messageFor(error: unknown) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  safeArea: { flex: 1, backgroundColor: '#11130f' },
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#11130f' },
-  scroll: { flexGrow: 1, alignItems: 'center', paddingHorizontal: 20, paddingVertical: 18 },
-  content: { width: '100%', maxWidth: 480 },
-  topline: { flexDirection: 'row', alignItems: 'center', gap: 9, marginBottom: 40 },
-  brandMark: { width: 35, height: 35, borderRadius: 12, backgroundColor: '#a1e533', alignItems: 'center', justifyContent: 'center' },
-  brandMarkText: { color: '#11130f', fontSize: 23, fontWeight: '900' },
-  brand: { color: '#f3f3ec', fontWeight: '900', letterSpacing: 3, fontSize: 16 },
-  cityPill: { marginLeft: 'auto', borderColor: '#34362f', borderWidth: 1, borderRadius: 20, paddingHorizontal: 11, paddingVertical: 7 },
-  cityText: { color: '#c8cac0', letterSpacing: 1.5, fontSize: 10, fontWeight: '700' },
+  safeArea: { flex: 1, backgroundColor: pulsDesign.background },
+  loading: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: pulsDesign.background },
+  scroll: { flexGrow: 1, alignItems: 'center', paddingHorizontal: 24, paddingVertical: 18 },
+  content: { width: '100%', maxWidth: 430 },
+  topline: { flexDirection: 'row', alignItems: 'center', gap: 9, marginBottom: 28 },
+  brandLogo: { width: 66, height: 44, resizeMode: 'contain' },
+  cityPill: { marginLeft: 'auto', borderColor: '#E3E3E8', borderWidth: 1, borderRadius: 20, paddingHorizontal: 11, paddingVertical: 7 },
+  cityText: { color: '#6B6B7B', letterSpacing: 1.5, fontSize: 10, fontWeight: '700' },
   hero: { marginBottom: 28 },
-  eyebrow: { color: '#a1e533', fontSize: 11, fontWeight: '800', letterSpacing: 2.3, marginBottom: 12 },
-  headline: { color: '#f3f3ec', fontSize: 43, lineHeight: 47, fontWeight: '800', letterSpacing: -1.4 },
-  headlineAccent: { color: '#a1e533' },
-  intro: { color: '#a3a59c', fontSize: 15, lineHeight: 22, maxWidth: 330, marginTop: 13 },
-  browseButton: { alignSelf: 'flex-start', borderColor: '#5e743c', borderWidth: 1, borderRadius: 13, paddingHorizontal: 15, paddingVertical: 12, marginBottom: 17 },
-  browseButtonText: { color: '#c5f28a', fontSize: 13, fontWeight: '700' },
-  card: { backgroundColor: '#1a1c17', borderColor: '#2e3029', borderWidth: 1, borderRadius: 24, padding: 21 },
-  modeSwitch: { flexDirection: 'row', backgroundColor: '#11130f', borderRadius: 14, padding: 4, marginBottom: 22 },
+  eyebrow: { color: '#D63B12', fontSize: 11, fontWeight: '800', letterSpacing: 2.3, marginBottom: 12 },
+  headline: { color: '#16161D', fontSize: 38, lineHeight: 43, fontWeight: '800', letterSpacing: -1.1 },
+  headlineAccent: { color: '#D63B12' },
+  intro: { color: '#6B6B7B', fontSize: 15, lineHeight: 22, maxWidth: 330, marginTop: 13 },
+  browseButton: { alignSelf: 'flex-start', borderColor: '#D63B12', borderWidth: 1, borderRadius: 13, paddingHorizontal: 15, paddingVertical: 12, marginBottom: 17 },
+  browseButtonText: { color: '#D63B12', fontSize: 13, fontWeight: '700' },
+  card: { backgroundColor: pulsDesign.surface, borderColor: pulsDesign.border, borderWidth: 1, borderRadius: 22, padding: 22 },
+  modeSwitch: { flexDirection: 'row', backgroundColor: pulsDesign.surfaceMuted, borderRadius: 20, padding: 4, marginBottom: 22 },
   modeButton: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 11, borderRadius: 11 },
-  modeButtonActive: { backgroundColor: '#292c22' },
-  modeText: { color: '#999b92', fontSize: 13, fontWeight: '600' },
-  modeTextActive: { color: '#f2f3eb' },
-  cardTitle: { color: '#f3f3ec', fontSize: 21, fontWeight: '700', marginBottom: 5 },
-  cardCopy: { color: '#a3a59c', fontSize: 13, lineHeight: 19, marginBottom: 20 },
+  modeButtonActive: { backgroundColor: '#E7E7EC' },
+  modeText: { color: '#6B6B7B', fontSize: 13, fontWeight: '600' },
+  modeTextActive: { color: '#16161D' },
+  cardTitle: { color: '#16161D', fontSize: 21, fontWeight: '700', marginBottom: 5 },
+  cardCopy: { color: '#6B6B7B', fontSize: 13, lineHeight: 19, marginBottom: 20 },
   field: { marginBottom: 14 },
-  label: { color: '#d8d9d1', fontSize: 12, fontWeight: '700', marginBottom: 7 },
-  input: { height: 50, borderWidth: 1, borderColor: '#383a33', backgroundColor: '#131510', borderRadius: 12, paddingHorizontal: 14, color: '#f4f4ed', fontSize: 15 },
-  primaryButton: { minHeight: 52, alignItems: 'center', justifyContent: 'center', backgroundColor: '#a1e533', borderRadius: 14, marginTop: 5 },
-  primaryButtonText: { color: '#11130f', fontSize: 15, fontWeight: '800' },
+  label: { color: '#16161D', fontSize: 12, fontWeight: '700', marginBottom: 7 },
+  input: { height: 50, borderWidth: 1, borderColor: '#E3E3E8', backgroundColor: '#FFFFFF', borderRadius: 12, paddingHorizontal: 14, color: '#16161D', fontSize: 15 },
+  primaryButton: { minHeight: 56, alignItems: 'center', justifyContent: 'center', backgroundColor: pulsDesign.accent, borderRadius: 28, marginTop: 5 },
+  primaryButtonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
   pressed: { opacity: 0.82 },
-  terms: { color: '#777970', textAlign: 'center', fontSize: 10, lineHeight: 15, marginTop: 15, paddingHorizontal: 9 },
-  errorBox: { backgroundColor: '#321f1d', borderColor: '#70423b', borderWidth: 1, borderRadius: 10, padding: 11, marginBottom: 12 },
-  errorText: { color: '#ffb6a8', fontSize: 12, lineHeight: 17 },
-  successIcon: { width: 48, height: 48, borderRadius: 16, backgroundColor: '#a1e533', alignItems: 'center', justifyContent: 'center', marginBottom: 17 },
-  successIconText: { color: '#11130f', fontSize: 26, fontWeight: '800' },
-  roleTag: { alignSelf: 'flex-start', backgroundColor: '#292c22', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 7, marginBottom: 18 },
-  roleText: { color: '#a1e533', fontWeight: '800', letterSpacing: 1.2, fontSize: 10 },
-  secondaryButton: { borderColor: '#494b43', borderWidth: 1, minHeight: 48, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
-  secondaryButtonText: { color: '#f1f2ea', fontWeight: '700', fontSize: 14 },
+  terms: { color: '#6B6B7B', textAlign: 'center', fontSize: 10, lineHeight: 15, marginTop: 15, paddingHorizontal: 9 },
+  errorBox: { backgroundColor: '#FCE6E0', borderColor: '#E6B9B0', borderWidth: 1, borderRadius: 10, padding: 11, marginBottom: 12 },
+  errorText: { color: '#B42323', fontSize: 12, lineHeight: 17 },
+  successIcon: { width: 48, height: 48, borderRadius: 16, backgroundColor: '#D63B12', alignItems: 'center', justifyContent: 'center', marginBottom: 17 },
+  successIconText: { color: '#FFFFFF', fontSize: 26, fontWeight: '800' },
+  roleTag: { alignSelf: 'flex-start', backgroundColor: '#E7E7EC', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 7, marginBottom: 18 },
+  roleText: { color: '#D63B12', fontWeight: '800', letterSpacing: 1.2, fontSize: 10 },
+  secondaryButton: { borderColor: '#E3E3E8', borderWidth: 1, minHeight: 48, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
+  secondaryButtonText: { color: '#16161D', fontWeight: '700', fontSize: 14 },
   footer: { alignItems: 'center', paddingVertical: 28 },
-  footerLine: { width: 38, height: 2, backgroundColor: '#a1e533', marginBottom: 12 },
-  footerText: { color: '#686a62', letterSpacing: 1.6, fontWeight: '700', fontSize: 9 },
-  apiHint: { color: '#4f514a', fontSize: 9, marginTop: 10 },
+  footerLine: { width: 38, height: 2, backgroundColor: '#D63B12', marginBottom: 12 },
+  footerText: { color: '#6B6B7B', letterSpacing: 1.6, fontWeight: '700', fontSize: 9 },
+  apiHint: { color: '#6B6B7B', fontSize: 9, marginTop: 10 },
 });

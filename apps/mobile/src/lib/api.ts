@@ -96,6 +96,10 @@ export interface DeliveryAddress {
   isDefault: boolean;
 }
 
+export function formatXof(value: string) {
+  return `${Number(value).toLocaleString('fr-FR')} FCFA`;
+}
+
 export interface DeliveryQuote {
   addressId: string;
   deliveryZone: string;
@@ -216,7 +220,10 @@ export const checkoutApi = {
   addresses: (accessToken: string) => request<DeliveryAddress[]>('/checkout/addresses', {
     headers: { Authorization: `Bearer ${accessToken}` },
   }),
-  createAddress: (accessToken: string, input: Omit<DeliveryAddress, 'id' | 'zoneName'>) =>
+  createAddress: (accessToken: string, input: Omit<DeliveryAddress, 'id' | 'zoneName'> & {
+    latitude?: number | null;
+    longitude?: number | null;
+  }) =>
     request<DeliveryAddress>('/checkout/addresses', {
       method: 'POST', headers: { Authorization: `Bearer ${accessToken}` },
       body: JSON.stringify(input),

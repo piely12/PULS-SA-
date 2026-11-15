@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { pulsDesign } from '@/constants/puls-design';
+import { ClientTabBar } from '@/components/client-tab-bar';
 import {
   ApiError,
   checkoutApi,
@@ -12,7 +14,7 @@ import {
 } from '@/lib/api';
 import { readSession } from '@/lib/token-store';
 
-const accent = '#a1e533';
+const accent = pulsDesign.accent;
 
 export default function CheckoutScreen() {
   const [token, setToken] = useState('');
@@ -30,6 +32,7 @@ export default function CheckoutScreen() {
   const [commune, setCommune] = useState('');
   const [neighborhood, setNeighborhood] = useState('');
   const [landmark, setLandmark] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('WAVE');
 
   useEffect(() => {
     let active = true;
@@ -100,11 +103,11 @@ export default function CheckoutScreen() {
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.topline}>
           <Pressable accessibilityRole="button" accessibilityLabel="Retour au panier" onPress={() => router.back()} style={styles.back}><Text style={styles.backText}>‹</Text></Pressable>
-          <View style={styles.brandMark}><Text style={styles.brandMarkText}>P</Text></View>
-          <Text style={styles.brand}>PULS</Text><Text style={styles.city}>ABIDJAN</Text>
+          <Image accessibilityLabel="PULS SA" source={require('../../assets/images/puls-sa-logo.png')} style={styles.brandLogo} />
+          <Text style={styles.city}>ABIDJAN</Text>
         </View>
-        <Text style={styles.eyebrow}>ÉTAPE 1 · LIVRAISON</Text>
-        <Text style={styles.title}>Où livrer ?</Text>
+        <Text style={styles.eyebrow}>COMMANDE · LIVRAISON ET PAIEMENT</Text>
+        <Text style={styles.title}>Paiement</Text>
         <Text style={styles.subtitle}>Choisissez une adresse ou ajoutez-en une nouvelle pour estimer les frais.</Text>
 
         {!!message && <View accessibilityLiveRegion="polite" style={styles.notice}><Text style={styles.noticeText}>{message}</Text></View>}
@@ -138,17 +141,32 @@ export default function CheckoutScreen() {
             <Row label={`Livraison · ${quote.deliveryZone}`} value={quote.freeDelivery ? 'Offerte' : formatXof(quote.deliveryFeeXof)} />
             <View style={styles.divider} /><Row label="Total estimé" value={formatXof(quote.totalXof)} total />
             <Text style={styles.hint}>Le montant et le stock seront revérifiés avant la création de la commande.</Text>
-            <View style={styles.paymentNotice}><Text style={styles.paymentTitle}>Paiement</Text><Text style={styles.paymentCopy}>Le paiement sécurisé Wave, Orange Money et MTN MoMo sera activé après la connexion du compte marchand Kadev Pay.</Text></View>
+            <View style={styles.paymentMethods}>
+              <Text style={styles.sectionTitle}>Moyen de paiement</Text>
+              {[
+                { id: 'WAVE', title: 'Wave', detail: 'Payer avec votre compte Wave' },
+                { id: 'ORANGE_MONEY', title: 'Orange Money', detail: 'Payer avec votre compte' },
+                { id: 'MTN_MOMO', title: 'MTN MoMo', detail: 'Payer avec votre compte' },
+                { id: 'CASH_ON_DELIVERY', title: 'Paiement à la livraison', detail: 'Espèces au livreur' },
+              ].map((method) => <Pressable key={method.id} onPress={() => setPaymentMethod(method.id)} style={[styles.paymentOption, paymentMethod === method.id && styles.paymentOptionSelected]}>
+                <View><Text style={styles.paymentTitle}>{method.title}</Text><Text style={styles.paymentCopy}>{method.detail}</Text></View>
+                <View style={[styles.radio, paymentMethod === method.id && styles.radioSelected]} />
+              </Pressable>)}
+              <Text style={styles.gatewayHint}>Paiement sécurisé via Kadev Pay</Text>
+              <Pressable accessibilityRole="button" disabled style={styles.payButton}><Text style={styles.payButtonText}>Payer {formatXof(quote.totalXof)}</Text></Pressable>
+              <Text style={styles.gatewayHint}>Le paiement et la validation de commande seront activés après la connexion du compte marchand.</Text>
+            </View>
           </View>}
         </>}
         <Text style={styles.footer}>PULS · ACHATS LOCAUX À ABIDJAN</Text>
       </ScrollView>
+      <ClientTabBar active="cart" />
     </SafeAreaView>
   );
 }
 
 function Field(props: { label: string; value: string; onChangeText: (value: string) => void; placeholder: string; keyboardType?: 'default' | 'phone-pad' }) {
-  return <View style={styles.field}><Text style={styles.label}>{props.label}</Text><TextInput value={props.value} onChangeText={props.onChangeText} placeholder={props.placeholder} placeholderTextColor="#74756e" keyboardType={props.keyboardType} style={styles.input} /></View>;
+  return <View style={styles.field}><Text style={styles.label}>{props.label}</Text><TextInput value={props.value} onChangeText={props.onChangeText} placeholder={props.placeholder} placeholderTextColor="#6B6B7B" keyboardType={props.keyboardType} style={styles.input} /></View>;
 }
 
 function Row({ label, value, total = false }: { label: string; value: string; total?: boolean }) {
@@ -156,14 +174,15 @@ function Row({ label, value, total = false }: { label: string; value: string; to
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#11130f' }, content: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 38, maxWidth: 760, width: '100%', alignSelf: 'center' },
-  topline: { flexDirection: 'row', alignItems: 'center', gap: 9, marginBottom: 34 }, back: { width: 35, height: 35, borderRadius: 12, backgroundColor: '#1a1c17', alignItems: 'center', justifyContent: 'center' }, backText: { color: '#f3f3ec', fontSize: 28 },
-  brandMark: { width: 32, height: 32, borderRadius: 11, backgroundColor: accent, alignItems: 'center', justifyContent: 'center' }, brandMarkText: { color: '#11130f', fontSize: 21, fontWeight: '900' }, brand: { color: '#f3f3ec', fontWeight: '900', letterSpacing: 3, fontSize: 15 }, city: { color: '#a3a59c', marginLeft: 'auto', fontSize: 10, letterSpacing: 1.5, fontWeight: '700' },
-  eyebrow: { color: accent, fontSize: 10, fontWeight: '800', letterSpacing: 2, marginBottom: 9 }, title: { color: '#f3f3ec', fontSize: 36, fontWeight: '800' }, subtitle: { color: '#a3a59c', fontSize: 13, lineHeight: 19, marginTop: 8, marginBottom: 20 },
-  section: { backgroundColor: '#1a1c17', borderColor: '#30322b', borderWidth: 1, borderRadius: 17, padding: 17, marginBottom: 13 }, sectionTitle: { color: '#f3f3ec', fontSize: 16, fontWeight: '800', marginBottom: 14 }, state: { minHeight: 260, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1a1c17', borderRadius: 17 }, stateTitle: { color: '#f3f3ec', fontWeight: '700' },
-  address: { flexDirection: 'row', alignItems: 'flex-start', gap: 11, padding: 12, borderWidth: 1, borderColor: '#383a33', borderRadius: 12, marginBottom: 9 }, addressSelected: { borderColor: accent, backgroundColor: '#23271b' }, addressRadio: { width: 17, height: 17, borderRadius: 9, borderWidth: 1, borderColor: accent, alignItems: 'center', justifyContent: 'center', marginTop: 2 }, addressRadioDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: accent }, addressCopy: { flex: 1 }, addressName: { color: '#f0f1e9', fontSize: 12, fontWeight: '700' }, addressDetail: { color: '#a3a59c', fontSize: 11, marginTop: 4 }, addAddress: { paddingVertical: 10 }, addAddressText: { color: accent, fontSize: 12, fontWeight: '700' },
-  field: { marginBottom: 12 }, label: { color: '#d8d9d1', fontSize: 11, fontWeight: '700', marginBottom: 6 }, input: { minHeight: 46, borderWidth: 1, borderColor: '#383a33', backgroundColor: '#131510', borderRadius: 11, paddingHorizontal: 12, color: '#f4f4ed', fontSize: 13 }, zones: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginBottom: 13, marginTop: 3 }, zone: { borderWidth: 1, borderColor: '#3b3e34', borderRadius: 18, paddingHorizontal: 11, paddingVertical: 7 }, zoneSelected: { backgroundColor: accent, borderColor: accent }, zoneText: { color: '#bdc0b4', fontSize: 10 }, zoneTextSelected: { color: '#11130f', fontWeight: '800' },
-  primary: { minHeight: 48, alignItems: 'center', justifyContent: 'center', backgroundColor: accent, borderRadius: 12, marginTop: 5 }, primaryText: { color: '#11130f', fontSize: 13, fontWeight: '800' }, disabled: { opacity: 0.55 }, cancel: { alignItems: 'center', paddingTop: 13 }, cancelText: { color: '#a3a59c', fontSize: 12 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, paddingVertical: 8 }, rowLabel: { color: '#a3a59c', fontSize: 12 }, rowValue: { color: '#e7e9df', fontSize: 12, fontWeight: '700' }, divider: { height: 1, backgroundColor: '#34372e', marginVertical: 8 }, totalLabel: { color: '#f2f3eb', fontSize: 13, fontWeight: '800' }, totalValue: { color: accent, fontSize: 15, fontWeight: '900' }, hint: { color: '#777970', fontSize: 10, lineHeight: 15, marginTop: 9 }, paymentNotice: { borderRadius: 12, backgroundColor: '#23271b', padding: 13, marginTop: 17 }, paymentTitle: { color: '#e9eddc', fontSize: 12, fontWeight: '800' }, paymentCopy: { color: '#aab09d', fontSize: 11, lineHeight: 16, marginTop: 5 },
-  notice: { backgroundColor: '#321f1d', borderColor: '#70423b', borderWidth: 1, borderRadius: 10, padding: 12, marginBottom: 13 }, noticeText: { color: '#ffb6a8', fontSize: 12, lineHeight: 18 }, footer: { color: '#55574f', textAlign: 'center', letterSpacing: 1.2, fontSize: 9, fontWeight: '700', marginTop: 28 },
+  safe: { flex: 1, backgroundColor: pulsDesign.background }, content: { paddingHorizontal: 24, paddingTop: 12, paddingBottom: 112, maxWidth: 430, width: '100%', alignSelf: 'center' },
+  topline: { flexDirection: 'row', alignItems: 'center', gap: 9, marginBottom: 22 }, back: { width: 44, height: 44, borderRadius: 22, backgroundColor: pulsDesign.surface, borderWidth: 1, borderColor: pulsDesign.border, alignItems: 'center', justifyContent: 'center' }, backText: { color: '#16161D', fontSize: 28 },
+  brandLogo: { width: 66, height: 44, resizeMode: 'contain' }, city: { color: '#6B6B7B', marginLeft: 'auto', fontSize: 10, letterSpacing: 1.5, fontWeight: '700' },
+  eyebrow: { color: accent, fontSize: 10, fontWeight: '800', letterSpacing: 2, marginBottom: 9 }, title: { color: '#16161D', fontSize: 26, fontWeight: '800' }, subtitle: { color: '#6B6B7B', fontSize: 13, lineHeight: 19, marginTop: 8, marginBottom: 20 },
+  section: { backgroundColor: '#FFFFFF', borderColor: '#E3E3E8', borderWidth: 1, borderRadius: 22, padding: 17, marginBottom: 13 }, sectionTitle: { color: '#16161D', fontSize: 16, fontWeight: '800', marginBottom: 14 }, state: { minHeight: 260, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', borderRadius: 17 }, stateTitle: { color: '#16161D', fontWeight: '700' },
+  address: { flexDirection: 'row', alignItems: 'flex-start', gap: 11, padding: 12, borderWidth: 1, borderColor: '#E3E3E8', borderRadius: 18, marginBottom: 9 }, addressSelected: { borderColor: accent, backgroundColor: pulsDesign.accentSoft }, addressRadio: { width: 17, height: 17, borderRadius: 9, borderWidth: 1, borderColor: accent, alignItems: 'center', justifyContent: 'center', marginTop: 2 }, addressRadioDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: accent }, addressCopy: { flex: 1 }, addressName: { color: '#16161D', fontSize: 12, fontWeight: '700' }, addressDetail: { color: '#6B6B7B', fontSize: 11, marginTop: 4 }, addAddress: { paddingVertical: 10 }, addAddressText: { color: accent, fontSize: 12, fontWeight: '700' },
+  field: { marginBottom: 12 }, label: { color: '#16161D', fontSize: 11, fontWeight: '700', marginBottom: 6 }, input: { minHeight: 46, borderWidth: 1, borderColor: '#E3E3E8', backgroundColor: '#FFFFFF', borderRadius: 14, paddingHorizontal: 12, color: '#16161D', fontSize: 13 }, zones: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginBottom: 13, marginTop: 3 }, zone: { borderWidth: 1, borderColor: '#E3E3E8', borderRadius: 18, paddingHorizontal: 11, paddingVertical: 7 }, zoneSelected: { backgroundColor: accent, borderColor: accent }, zoneText: { color: '#6B6B7B', fontSize: 10 }, zoneTextSelected: { color: '#FFFFFF', fontWeight: '800' },
+  primary: { minHeight: 56, alignItems: 'center', justifyContent: 'center', backgroundColor: accent, borderRadius: 28, marginTop: 5 }, primaryText: { color: '#FFFFFF', fontSize: 13, fontWeight: '800' }, disabled: { opacity: 0.55 }, cancel: { alignItems: 'center', paddingTop: 13 }, cancelText: { color: '#6B6B7B', fontSize: 12 },
+  row: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, paddingVertical: 8 }, rowLabel: { color: '#6B6B7B', fontSize: 12 }, rowValue: { color: '#16161D', fontSize: 12, fontWeight: '700' }, divider: { height: 1, backgroundColor: '#E3E3E8', marginVertical: 8 }, totalLabel: { color: '#16161D', fontSize: 13, fontWeight: '800' }, totalValue: { color: accent, fontSize: 15, fontWeight: '900' }, hint: { color: '#6B6B7B', fontSize: 10, lineHeight: 15, marginTop: 9 },
+  paymentMethods: { marginTop: 17 }, paymentOption: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#FFFFFF', borderRadius: 18, borderWidth: 2, borderColor: 'transparent', paddingHorizontal: 16, paddingVertical: 13, marginBottom: 8 }, paymentOptionSelected: { borderColor: accent }, paymentTitle: { color: '#16161D', fontSize: 13, fontWeight: '800' }, paymentCopy: { color: '#6B6B7B', fontSize: 11, lineHeight: 16, marginTop: 3 }, radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: '#6B6B7B' }, radioSelected: { borderWidth: 6, borderColor: accent }, gatewayHint: { color: '#6B6B7B', fontSize: 10, lineHeight: 15, marginTop: 9 }, payButton: { minHeight: 56, alignItems: 'center', justifyContent: 'center', backgroundColor: accent, borderRadius: 28, marginTop: 15, opacity: 0.5 }, payButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
+  notice: { backgroundColor: '#FCE6E0', borderColor: '#E6B9B0', borderWidth: 1, borderRadius: 10, padding: 12, marginBottom: 13 }, noticeText: { color: '#B42323', fontSize: 12, lineHeight: 18 }, footer: { color: '#6B6B7B', textAlign: 'center', letterSpacing: 1.2, fontSize: 9, fontWeight: '700', marginTop: 28 },
 });
